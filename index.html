@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Kwitansi Madrasah</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- jsPDF & html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Z-Index Hierarchy & Custom Styles */
+        #loading-overlay { z-index: 9999; }
+        #toast-container { z-index: 2000; }
+        #modal-container { z-index: 1000; }
+        .app-content { z-index: 10; }
+        
+        /* MODERN KWITANSI TEMPLATE STYLE */
+        #print-template-wrapper {
+            position: absolute;
+            top: -9999px; /* Sembunyikan dari layar */
+            left: -9999px;
+            width: 800px;
+            background: white;
+        }
+        
+        .kwitansi-modern {
+            width: 100%;
+            min-height: 480px;
+            background-color: #ffffff;
+            border: 2px solid #065f46; /* Emerald-800 border */
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Watermark Background */
+        .k-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            font-size: 80px;
+            font-weight: 800;
+            color: rgba(6, 95, 70, 0.04);
+            white-space: nowrap;
+            z-index: 0;
+            pointer-events: none;
+            text-transform: uppercase;
+        }
+
+        /* Header Style */
+        .k-header {
+            background: linear-gradient(135deg, #064e3b 0%, #047857 100%); /* Emerald Gradient */
+            color: white;
+            padding: 25px 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid #10b981; /* Accent line */
+            z-index: 1;
+        }
+        .k-header-left h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .k-header-left p {
+            font-size: 13px;
+            margin: 5px 0 0 0;
+            color: #d1fae5;
+            font-weight: 400;
+            max-width: 400px;
+            line-height: 1.4;
+        }
+        .k-header-right {
+            text-align: right;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+        }
+        .k-header-right h2 {
+            font-size: 16px;
+            margin: 0 0 5px 0;
+            color: #a7f3d0;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .k-header-right p {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        /* Body Style */
+        .k-body {
+            padding: 30px 35px;
+            flex-grow: 1;
+            z-index: 1;
+        }
+        .k-row {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+        .k-label {
+            width: 180px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #374151;
+            padding-top: 5px;
+        }
+        .k-colon {
+            width: 20px;
+            font-weight: 600;
+            color: #374151;
+            padding-top: 5px;
+        }
+        .k-value {
+            flex-grow: 1;
+            font-size: 16px;
+            font-weight: 500;
+            color: #111827;
+            padding-bottom: 5px;
+            border-bottom: 2px dotted #9ca3af;
+            min-height: 30px;
+            line-height: 1.6;
+        }
+        
+        .k-terbilang-box {
+            background-color: #ecfdf5; /* Emerald-50 */
+            border-left: 4px solid #059669; /* Emerald-600 */
+            padding: 12px 15px;
+            font-size: 15px;
+            font-style: italic;
+            font-weight: 700;
+            color: #064e3b; /* Emerald-900 */
+            border-radius: 4px;
+            margin-top: -5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* Footer Style */
+        .k-footer {
+            padding: 20px 35px 35px 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 1;
+        }
+        .k-nominal-container {
+            background: #047857; /* Emerald-700 */
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 2px solid #065f46;
+        }
+        .k-nominal-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #a7f3d0;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .k-nominal-value {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        
+        .k-signature-area {
+            text-align: center;
+            min-width: 200px;
+        }
+        .k-date {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 15px;
+        }
+        .k-sig-box {
+            position: relative;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .k-stempel {
+            position: absolute;
+            left: -20px;
+            top: -10px;
+            width: 120px;
+            height: 120px;
+            opacity: 0.85;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+        .k-ttd {
+            position: absolute;
+            z-index: 2;
+            width: 160px;
+            height: 90px;
+            object-fit: contain;
+        }
+        .k-bendahara-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #111827;
+            text-decoration: underline;
+            margin-bottom: 2px;
+        }
+        .k-bendahara-title {
+            font-size: 13px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased h-screen overflow-hidden">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex flex-col items-center justify-center hidden backdrop-blur-sm transition-opacity">
+        <i class="fas fa-circle-notch fa-spin text-emerald-500 text-6xl mb-4 shadow-lg rounded-full"></i>
+        <p id="loading-text" class="text-white text-xl font-semibold tracking-wide">Memproses data...</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Modal Container -->
+    <div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform transition-all scale-95 opacity-0" id="modal-card">
+            <div class="p-6 border-b border-gray-100 bg-gray-50">
+                <h3 id="modal-title" class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-circle-exclamation text-amber-500"></i> Konfirmasi
+                </h3>
+            </div>
+            <div class="p-6">
+                <p id="modal-message" class="text-gray-600 mb-6 text-base">Apakah Anda yakin?</p>
+                <div class="flex justify-end gap-3">
+                    <button id="modal-cancel" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition shadow-sm">Batal</button>
+                    <button id="modal-confirm" class="px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition shadow-sm">Ya, Lanjutkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH GUARD: Login View -->
+    <div id="login-view" class="h-full flex items-center justify-center bg-gradient-to-br from-emerald-800 to-green-900 relative overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#ffffff 2px, transparent 2px); background-size: 30px 30px;"></div>
+        
+        <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative z-10 border-t-4 border-emerald-500">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-4 shadow-inner">
+                    <i class="fas fa-mosque text-3xl text-emerald-600"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">E-Kwitansi</h2>
+                <p class="text-sm text-gray-500 mt-2 font-medium">Sistem Keuangan Madrasah</p>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="mb-5">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="username">Username</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-gray-400"></i>
+                        </div>
+                        <input class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-sm" id="username" type="text" placeholder="Masukkan username" required>
+                    </div>
+                </div>
+                <div class="mb-8">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="password">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </div>
+                        <input class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-sm" id="password" type="password" placeholder="••••••••" required>
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-emerald-600 transition">
+                            <i class="fas fa-eye" id="toggle-password-icon"></i>
+                        </button>
+                    </div>
+                </div>
+                <button class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md flex justify-center items-center gap-2" type="submit">
+                    <span>Masuk Sistem</span> <i class="fas fa-arrow-right-to-bracket"></i>
+                </button>
+                <div class="mt-6 text-center">
+                    <p class="text-xs text-gray-400 bg-gray-50 py-2 rounded-lg border border-dashed border-gray-200">Hint Demo: <span class="font-bold text-gray-600">admin</span> / <span class="font-bold text-gray-600">admin123</span></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP VIEW (Hidden initially) -->
+    <div id="app-view" class="h-full hidden flex bg-gray-50">
+        <!-- Sidebar -->
+        <aside class="w-72 bg-emerald-900 text-white flex flex-col shadow-2xl z-20">
+            <div class="p-6 bg-emerald-950 flex items-center gap-4">
+                <div class="bg-emerald-800 p-3 rounded-lg shadow-inner">
+                    <i class="fas fa-file-invoice-dollar text-2xl text-emerald-300"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl leading-tight tracking-wide">E-Kwitansi</h1>
+                    <p class="text-xs text-emerald-400/80 font-medium">Administrator</p>
+                </div>
+            </div>
+            <nav class="flex-1 px-4 py-8 space-y-3 overflow-y-auto">
+                <p class="px-4 text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">Menu Utama</p>
+                <button onclick="navigate('dashboard')" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 bg-emerald-800/80 rounded-xl text-left transition font-medium" data-target="dashboard">
+                    <i class="fas fa-chart-pie w-5 text-center text-emerald-300"></i> Dashboard
+                </button>
+                <button onclick="navigate('buat')" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 hover:bg-emerald-800/50 rounded-xl text-left transition font-medium text-emerald-100" data-target="buat">
+                    <i class="fas fa-pen-nib w-5 text-center text-emerald-300"></i> Buat Kwitansi
+                </button>
+                <button onclick="navigate('riwayat')" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 hover:bg-emerald-800/50 rounded-xl text-left transition font-medium text-emerald-100" data-target="riwayat">
+                    <i class="fas fa-clock-rotate-left w-5 text-center text-emerald-300"></i> Riwayat Transaksi
+                </button>
+                
+                <p class="px-4 text-xs font-semibold text-emerald-400 uppercase tracking-wider mt-8 mb-2">Konfigurasi</p>
+                <button onclick="navigate('pengaturan')" class="nav-btn w-full flex items-center gap-4 px-4 py-3.5 hover:bg-emerald-800/50 rounded-xl text-left transition font-medium text-emerald-100" data-target="pengaturan">
+                    <i class="fas fa-sliders w-5 text-center text-emerald-300"></i> Pengaturan
+                </button>
+            </nav>
+            <div class="p-5 bg-emerald-950">
+                <button onclick="confirmLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-red-500/30 hover:bg-red-600/20 text-red-300 hover:text-red-200 rounded-xl transition font-medium">
+                    <i class="fas fa-power-off"></i> Keluar Sistem
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto relative app-content">
+            <!-- Header Bar -->
+            <header class="bg-white px-8 py-5 shadow-sm border-b border-gray-100 sticky top-0 z-10 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-800" id="page-title">Dashboard</h2>
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold text-gray-800 leading-tight">Admin Keuangan</p>
+                        <p class="text-xs text-gray-500" id="header-date"></p>
+                    </div>
+                    <div class="h-10 w-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center border-2 border-emerald-200">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-8 max-w-7xl mx-auto">
+                <!-- Dashboard Section -->
+                <section id="sec-dashboard" class="page-section">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <!-- Stat Card 1 -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Total Kwitansi</p>
+                                    <h3 class="text-3xl font-bold text-gray-800" id="stat-count">0</h3>
+                                </div>
+                                <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                                    <i class="fas fa-receipt text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="text-xs font-medium text-blue-600 bg-blue-50 py-1 px-2 rounded inline-block w-max">Bulan Ini</div>
+                        </div>
+                        
+                        <!-- Stat Card 2 -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition lg:col-span-2">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Total Pemasukan</p>
+                                    <h3 class="text-3xl font-bold text-emerald-600" id="stat-total">Rp 0</h3>
+                                </div>
+                                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                                    <i class="fas fa-wallet text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="text-xs font-medium text-emerald-600 bg-emerald-50 py-1 px-2 rounded inline-block w-max">Bulan Ini</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-building text-emerald-600 mr-2"></i> Identitas Madrasah (Aktif)</h3>
+                            <button onclick="navigate('pengaturan')" class="text-sm font-medium text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg transition"><i class="fas fa-edit mr-1"></i> Ubah</button>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Nama Yayasan/Madrasah</p>
+                                    <p class="text-base font-semibold text-gray-900" id="dash-nama">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Nama Bendahara Penerima</p>
+                                    <p class="text-base font-semibold text-gray-900" id="dash-bendahara">-</p>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Alamat Lengkap</p>
+                                    <p class="text-base font-medium text-gray-900" id="dash-alamat">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Tempat Ditetapkan</p>
+                                    <p class="text-base font-medium text-gray-900 flex items-center gap-2"><i class="fas fa-location-dot text-gray-400"></i> <span id="dash-tempat">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Buat Kwitansi Section -->
+                <section id="sec-buat" class="page-section hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden max-w-4xl">
+                        <div class="bg-emerald-600 p-6 text-white">
+                            <h3 class="text-xl font-bold mb-1"><i class="fas fa-file-signature mr-2"></i> Form Kwitansi Baru</h3>
+                            <p class="text-emerald-100 text-sm">Lengkapi data di bawah ini untuk menerbitkan kwitansi resmi.</p>
+                        </div>
+                        <div class="p-8">
+                            <form id="form-kwitansi" onsubmit="handleBuatKwitansi(event)">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2">No. Kwitansi (Otomatis)</label>
+                                        <input type="text" id="k-nomor" class="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 font-mono font-medium focus:outline-none" readonly>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2">Tanggal Penerimaan <span class="text-red-500">*</span></label>
+                                        <input type="date" id="k-tanggal" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-6">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Telah Terima Dari <span class="text-red-500">*</span></label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fas fa-user-pen text-gray-400"></i></div>
+                                        <input type="text" id="k-nama" class="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition font-medium" placeholder="Nama Siswa / Wali / Instansi" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-6 bg-emerald-50/50 p-5 rounded-xl border border-emerald-100">
+                                    <label class="block text-emerald-900 text-sm font-bold mb-2">Uang Sejumlah (Rp) <span class="text-red-500">*</span></label>
+                                    <div class="relative mb-3">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><span class="text-gray-500 font-bold">Rp</span></div>
+                                        <input type="text" id="k-nominal" onkeyup="formatCurrencyInput(this)" class="w-full pl-12 pr-4 py-3 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition text-2xl font-bold text-gray-800" placeholder="0" required>
+                                    </div>
+                                    <div id="k-terbilang-container" class="hidden flex items-start gap-2 text-sm text-emerald-800 bg-emerald-100/50 p-3 rounded-lg border border-emerald-200">
+                                        <i class="fas fa-quote-left text-emerald-400 mt-1"></i>
+                                        <p id="k-terbilang" class="font-semibold italic leading-relaxed"></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-8">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Untuk Pembayaran <span class="text-red-500">*</span></label>
+                                    <textarea id="k-keterangan" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition resize-none font-medium text-gray-700" placeholder="Rincian pembayaran... (Misal: SPP Bulan Agustus 2026 dan Uang Gedung)" required></textarea>
+                                </div>
+                                
+                                <div class="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100">
+                                    <button type="button" onclick="resetFormKwitansi()" class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition shadow-sm">Kosongkan Form</button>
+                                    <button type="submit" class="px-8 py-2.5 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition shadow-md flex items-center justify-center gap-2">
+                                        <i class="fas fa-print"></i> Terbitkan & Unduh PDF
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Riwayat Section -->
+                <section id="sec-riwayat" class="page-section hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/50">
+                            <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-list text-emerald-600 mr-2"></i> Daftar Kwitansi</h3>
+                            <div class="relative w-full sm:w-72">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" id="search-riwayat" placeholder="Cari nama atau keperluan..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition" onkeyup="renderTable()">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-white text-gray-500 text-xs uppercase tracking-wider border-b-2 border-gray-100">
+                                        <th class="p-5 font-semibold">No. Kwitansi</th>
+                                        <th class="p-5 font-semibold">Terima Dari</th>
+                                        <th class="p-5 font-semibold">Nominal</th>
+                                        <th class="p-5 font-semibold w-1/3">Keperluan</th>
+                                        <th class="p-5 font-semibold text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="divide-y divide-gray-100">
+                                    <!-- Data Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-4 border-t border-gray-100 bg-gray-50 text-center text-sm text-gray-500">
+                            Menampilkan data terbaru.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Pengaturan Section -->
+                <section id="sec-pengaturan" class="page-section hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                        
+                        <!-- Form Profil -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 lg:col-span-3 overflow-hidden">
+                            <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+                                <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-building-columns text-emerald-600 mr-2"></i> Profil Madrasah & Pejabat</h3>
+                            </div>
+                            <form id="form-settings" onsubmit="saveSettings(event)" class="p-6">
+                                <div class="mb-5">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Nama Madrasah / Yayasan</label>
+                                    <input type="text" id="s-nama" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-medium" required>
+                                </div>
+                                <div class="mb-5">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Alamat Lengkap</label>
+                                    <textarea id="s-alamat" rows="2" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-medium resize-none" required></textarea>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2">Tempat Penetapan (Kota/Kab)</label>
+                                        <input type="text" id="s-tempat" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-medium" placeholder="Misal: Sukabumi" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2">Nama Penerima / Bendahara</label>
+                                        <input type="text" id="s-bendahara" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-medium" required>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end pt-4 border-t border-gray-100">
+                                    <button type="submit" class="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition shadow-md flex items-center gap-2">
+                                        <i class="fas fa-save"></i> Simpan Konfigurasi
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Form Aset -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 lg:col-span-2 overflow-hidden flex flex-col">
+                            <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+                                <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-stamp text-emerald-600 mr-2"></i> Stempel & Tanda Tangan</h3>
+                            </div>
+                            <div class="p-6 flex-1 flex flex-col gap-6">
+                                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-2">
+                                    <p class="text-xs text-blue-700 flex gap-2"><i class="fas fa-info-circle mt-0.5"></i> <span>Gunakan gambar berformat <b>PNG Transparan</b> agar menyatu dengan background kwitansi.</span></p>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Stempel Madrasah</label>
+                                    <div class="flex items-center gap-4">
+                                        <div class="h-24 w-24 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center bg-gray-50 overflow-hidden relative group cursor-pointer" onclick="document.getElementById('file-stempel').click()">
+                                            <img id="preview-stempel" class="max-h-full max-w-full hidden relative z-10 p-2 mix-blend-multiply">
+                                            <span id="text-stempel" class="text-xs text-gray-400 absolute text-center">Upload<br>Stempel</span>
+                                            <div class="absolute inset-0 bg-black bg-opacity-10 hidden group-hover:flex items-center justify-center z-20">
+                                                <i class="fas fa-upload text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="file" id="file-stempel" accept="image/png, image/jpeg" class="hidden" onchange="previewImage(this, 'preview-stempel')">
+                                            <button type="button" onclick="document.getElementById('file-stempel').click()" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">Pilih Gambar</button>
+                                            <p class="text-xs text-gray-400 mt-2">Maks: 1MB. Rasio 1:1.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pt-4 border-t border-gray-100">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Tanda Tangan Bendahara</label>
+                                    <div class="flex items-center gap-4">
+                                        <div class="h-24 w-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center bg-gray-50 overflow-hidden relative group cursor-pointer" onclick="document.getElementById('file-ttd').click()">
+                                            <img id="preview-ttd" class="max-h-full max-w-full hidden relative z-10 p-2 mix-blend-multiply">
+                                            <span id="text-ttd" class="text-xs text-gray-400 absolute text-center">Upload<br>TTD</span>
+                                            <div class="absolute inset-0 bg-black bg-opacity-10 hidden group-hover:flex items-center justify-center z-20">
+                                                <i class="fas fa-upload text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="file" id="file-ttd" accept="image/png, image/jpeg" class="hidden" onchange="previewImage(this, 'preview-ttd')">
+                                            <button type="button" onclick="document.getElementById('file-ttd').click()" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">Pilih Gambar</button>
+                                            <p class="text-xs text-gray-400 mt-2">Maks: 1MB. Rasio proporsional.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+            </div>
+        </main>
+    </div>
+
+    <!-- HIDDEN TEMPLATE FOR PRINTING KWITANSI (MODERN DESIGN) -->
+    <div id="print-template-wrapper">
+        <div id="kwitansi-print-area" class="kwitansi-modern">
+            <!-- Background Watermark -->
+            <div class="k-watermark" id="p-watermark">KWITANSI RESMI</div>
+
+            <!-- Header -->
+            <div class="k-header">
+                <div class="k-header-left">
+                    <h1 id="p-kop-nama">NAMA MADRASAH</h1>
+                    <p id="p-kop-alamat">Alamat Lengkap Madrasah Tertera Disini</p>
+                </div>
+                <div class="k-header-right">
+                    <h2>KWITANSI PEMBAYARAN</h2>
+                    <p>NO: <span id="p-nomor">KW/000</span></p>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="k-body">
+                <div class="k-row">
+                    <div class="k-label">Telah terima dari</div>
+                    <div class="k-colon">:</div>
+                    <div class="k-value" id="p-terima"></div>
+                </div>
+                <div class="k-row">
+                    <div class="k-label">Nominal (Angka)</div>
+                    <div class="k-colon">:</div>
+                    <div class="k-value font-bold" style="font-weight: 700; font-size: 18px;" id="p-nominal-angka">Rp 0</div>
+                </div>
+                <div class="k-row" style="align-items: center;">
+                    <div class="k-label">Terbilang</div>
+                    <div class="k-colon">:</div>
+                    <div style="flex-grow: 1;">
+                        <div class="k-terbilang-box" id="p-terbilang"></div>
+                    </div>
+                </div>
+                <div class="k-row">
+                    <div class="k-label">Untuk pembayaran</div>
+                    <div class="k-colon">:</div>
+                    <div class="k-value" id="p-keterangan" style="min-height: 50px;"></div>
+                </div>
+            </div>
+
+            <!-- Footer & Signature -->
+            <div class="k-footer">
+                <div>
+                    <div class="k-nominal-container">
+                        <div class="k-nominal-label">Total Nominal</div>
+                        <div class="k-nominal-value" id="p-nominal">Rp 0</div>
+                    </div>
+                </div>
+                <div class="k-signature-area">
+                    <div class="k-date"><span id="p-tempat">Kota</span>, <span id="p-tanggal">01 Januari 2026</span></div>
+                    <div class="k-sig-box">
+                        <img id="p-stempel" class="k-stempel" src="" style="display: none;">
+                        <img id="p-ttd" class="k-ttd" src="" style="display: none;">
+                    </div>
+                    <div class="k-bendahara-name" id="p-bendahara">Nama Bendahara</div>
+                    <div class="k-bendahara-title">Penerima / Bendahara</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        /**
+         ============================================================
+         WAJIB DIUBAH!
+         Ganti URL di bawah dengan URL Web App Anda setelah deploy dari Google Apps Script.
+         ============================================================
+        */
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5T9P4XqA4l6Q-aRj5E5gL9n4B_K0Y8Z6W2X1V3U5T7S9R1Q3P5M7N9B1V3X5Z7C9/exec"; 
+        // GANTI URL DI ATAS ^^^ DENGAN URL WEB APP MILIK ANDA!
+
+        // --- GLOBAL STATE ---
+        let appSettings = {
+            nama: "-",
+            alamat: "-",
+            tempat: "-",
+            bendahara: "-",
+            stempelDataUrl: "",
+            ttdDataUrl: ""
+        };
+
+        let kwitansiData = [];
+        let sessionToken = sessionStorage.getItem('kw_session_token') || null;
+
+        // Set Date to Header
+        document.getElementById('header-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Periksa sesi saat halaman dimuat
+        window.onload = () => {
+            if (sessionToken) {
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('app-view').classList.remove('hidden');
+                initApp();
+            }
+        };
+
+        // --- STREAMING_CHUNK:UI UTILITIES (Toast, Modal, Loading)... ---
+        function showLoading(text = "Memproses...") {
+            document.getElementById('loading-text').innerText = text;
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600');
+            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info');
+            
+            toast.className = `${bgColor} text-white px-6 py-3.5 rounded-xl shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-x-full opacity-0 font-medium`;
+            toast.innerHTML = `<i class="fas ${icon} text-lg"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => { toast.classList.remove('translate-x-full', 'opacity-0'); }, 10);
+            
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function showModal(title, message, onConfirm) {
+            const modal = document.getElementById('modal-container');
+            const card = document.getElementById('modal-card');
+            
+            document.getElementById('modal-title').innerHTML = `<i class="fas fa-circle-exclamation text-amber-500"></i> ${title}`;
+            document.getElementById('modal-message').innerText = message;
+            
+            const btnCancel = document.getElementById('modal-cancel');
+            const btnConfirm = document.getElementById('modal-confirm');
+            
+            const newCancel = btnCancel.cloneNode(true);
+            const newConfirm = btnConfirm.cloneNode(true);
+            btnCancel.parentNode.replaceChild(newCancel, btnCancel);
+            btnConfirm.parentNode.replaceChild(newConfirm, btnConfirm);
+            
+            function closeModal() {
+                card.classList.remove('scale-100', 'opacity-100');
+                card.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            }
+
+            newCancel.addEventListener('click', closeModal);
+            newConfirm.addEventListener('click', () => {
+                closeModal();
+                if (onConfirm) onConfirm();
+            });
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        // --- STREAMING_CHUNK:AUTHENTICATION & NAVIGATION... ---
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggle-password-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            
+            showLoading("Memverifikasi Kredensial...");
+            
+            try {
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', username: user, password: pass })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    sessionToken = result.session_token;
+                    sessionStorage.setItem('kw_session_token', sessionToken);
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('app-view').classList.remove('hidden');
+                    initApp();
+                    showToast("Login berhasil! Selamat datang.", "success");
+                } else {
+                    showToast(result.message || "Login gagal!", "error");
+                }
+            } catch (error) {
+                console.error("Login Error:", error);
+                showToast("Terjadi kesalahan jaringan saat login.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function confirmLogout() {
+            showModal("Keluar Aplikasi", "Apakah Anda yakin ingin keluar dari sistem e-Kwitansi?", async () => {
+                showLoading("Keluar sistem...");
+                try {
+                     await fetch(APP_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'logout', token: sessionToken })
+                    });
+                } catch(e) {
+                    console.warn("Logout request failed, proceeding local logout");
+                }
+                
+                sessionToken = null;
+                sessionStorage.removeItem('kw_session_token');
+                document.getElementById('app-view').classList.add('hidden');
+                document.getElementById('login-view').classList.remove('hidden');
+                document.getElementById('login-form').reset();
+                document.getElementById('password').type = 'password'; // Reset toggle state
+                document.getElementById('toggle-password-icon').className = 'fas fa-eye';
+                hideLoading();
+                navigate('dashboard');
+            });
+        }
+
+        const pageTitles = { 'dashboard': 'Dashboard', 'buat': 'Terbitkan Kwitansi Baru', 'riwayat': 'Riwayat Transaksi', 'pengaturan': 'Konfigurasi Sistem' };
+
+        function navigate(targetId) {
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-800/80', 'text-white');
+                btn.classList.add('hover:bg-emerald-800/50', 'text-emerald-100');
+            });
+            
+            document.getElementById(`sec-${targetId}`).classList.remove('hidden');
+            const activeBtn = document.querySelector(`.nav-btn[data-target="${targetId}"]`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-emerald-800/80', 'text-white');
+                activeBtn.classList.remove('hover:bg-emerald-800/50', 'text-emerald-100');
+            }
+            
+            document.getElementById('page-title').innerText = pageTitles[targetId] || 'Dashboard';
+
+            if(targetId === 'buat') generateNomor();
+            if(targetId === 'riwayat') renderTable();
+        }
+
+        // --- STREAMING_CHUNK:APPLICATION LOGIC (Formatting, Dashboard)... ---
+        async function initApp() {
+            showLoading("Memuat data aplikasi...");
+            try {
+                // Fetch Settings and Data concurrently
+                const [settingsRes, dataRes] = await Promise.all([
+                    fetch(APP_SCRIPT_URL + '?action=get_settings&token=' + sessionToken),
+                    fetch(APP_SCRIPT_URL + '?action=get_data&token=' + sessionToken)
+                ]);
+
+                const settingsResult = await settingsRes.json();
+                const dataResult = await dataRes.json();
+
+                if (settingsResult.success && dataResult.success) {
+                    appSettings = settingsResult.data;
+                    kwitansiData = dataResult.data;
+                    
+                    updateDashboard();
+                    populateSettingsForm();
+                    renderTable();
+                    document.getElementById('k-tanggal').valueAsDate = new Date();
+                } else {
+                    // Handle session expired or other errors
+                    showToast(settingsResult.message || dataResult.message || "Gagal memuat data", "error");
+                    if(settingsResult.message?.includes("Token") || dataResult.message?.includes("Token")) {
+                        setTimeout(() => confirmLogout(), 2000); // Force logout if token invalid
+                    }
+                }
+            } catch (error) {
+                console.error("Init Error:", error);
+                showToast("Kesalahan jaringan saat memuat data.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+        }
+
+        function formatCurrencyInput(input) {
+            let value = input.value.replace(/[^,\d]/g, '').toString();
+            let split = value.split(',');
+            let sisa = split[0].length % 3;
+            let rupiah = split[0].substr(0, sisa);
+            let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+            if (ribuan) {
+                let separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
+            rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+            input.value = rupiah;
+
+            let numValue = parseInt(value) || 0;
+            const tbContainer = document.getElementById('k-terbilang-container');
+            const tbText = document.getElementById('k-terbilang');
+            if (numValue > 0) {
+                tbText.innerText = terbilang(numValue) + " Rupiah";
+                tbContainer.classList.remove('hidden');
+            } else {
+                tbContainer.classList.add('hidden');
+            }
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            showLoading("Menyimpan Pengaturan...");
+            
+            const newSettings = {
+                nama: document.getElementById('s-nama').value,
+                alamat: document.getElementById('s-alamat').value,
+                tempat: document.getElementById('s-tempat').value,
+                bendahara: document.getElementById('s-bendahara').value,
+            };
+
+            const stempelImg = document.getElementById('preview-stempel').src;
+            if(stempelImg && !stempelImg.endsWith('#') && stempelImg.startsWith('data:image')) {
+                 newSettings.stempelDataUrl = stempelImg;
+            } else {
+                 newSettings.stempelDataUrl = appSettings.stempelDataUrl; // Keep existing if not changed
+            }
+            
+            const ttdImg = document.getElementById('preview-ttd').src;
+            if(ttdImg && !ttdImg.endsWith('#') && ttdImg.startsWith('data:image')) {
+                 newSettings.ttdDataUrl = ttdImg;
+            } else {
+                 newSettings.ttdDataUrl = appSettings.ttdDataUrl;
+            }
+
+            try {
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'save_settings', 
+                        token: sessionToken,
+                        settings: newSettings
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    appSettings = newSettings;
+                    // If backend saved to Drive and returned actual URLs (simplified here, we keep using dataURL for fast UI rendering, but in a real massive app we might fetch the drive URL. For kwitansi PDF, dataURL is actually better/faster).
+                    updateDashboard();
+                    showToast("Pengaturan berhasil disimpan.", "success");
+                } else {
+                    showToast(result.message || "Gagal menyimpan pengaturan.", "error");
+                }
+            } catch (error) {
+                console.error("Save Settings Error:", error);
+                showToast("Terjadi kesalahan saat menyimpan pengaturan.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- STREAMING_CHUNK:RECEIPT GENERATION & EXPORT LOGIC... ---
+        function generateNomor() {
+            const date = document.getElementById('k-tanggal').value ? new Date(document.getElementById('k-tanggal').value) : new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const count = String(kwitansiData.length + 1).padStart(3, '0');
+            document.getElementById('k-nomor').value = `KW/${year}/${month}/${count}`;
+        }
+        
+        // Auto-update nomor based on selected date
+        document.getElementById('k-tanggal').addEventListener('change', generateNomor);
+
+        function resetFormKwitansi() {
+            document.getElementById('form-kwitansi').reset();
+            document.getElementById('k-terbilang-container').classList.add('hidden');
+            document.getElementById('k-tanggal').valueAsDate = new Date();
+            generateNomor();
+        }
+
+        async function handleBuatKwitansi(e) {
+            e.preventDefault();
+            
+            const nomor = document.getElementById('k-nomor').value;
+            const tanggal = document.getElementById('k-tanggal').value;
+            const nama = document.getElementById('k-nama').value;
+            const nominalStr = document.getElementById('k-nominal').value.replace(/\./g, '');
+            const nominal = parseInt(nominalStr);
+            const keterangan = document.getElementById('k-keterangan').value;
+            
+            if(!nominal || nominal <= 0) {
+                showToast("Nominal tidak valid!", "error"); return;
+            }
+
+            const dataToSave = { id: nomor, tanggal, nama, nominal, keterangan };
+            
+            showLoading("Menyimpan ke Server & Membuat PDF...");
+            
+            try {
+                // 1. Save to Backend First
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'save_kwitansi', 
+                        token: sessionToken,
+                        data: dataToSave
+                    })
+                });
+                
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update Local State
+                    kwitansiData.unshift(dataToSave); 
+                    
+                    // 2. Generate PDF using local data (faster than waiting for backend PDF generation)
+                    await buildAndDownloadPDF(dataToSave);
+                    
+                    showToast("Kwitansi berhasil diterbitkan & PDF diunduh!", "success");
+                    resetFormKwitansi();
+                    updateDashboard();
+                } else {
+                     showToast(result.message || "Gagal menyimpan ke server.", "error");
+                }
+
+            } catch (error) {
+                console.error("Save Kwitansi Error:", error);
+                showToast("Terjadi kesalahan saat memproses kwitansi.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderTable() {
+            const query = document.getElementById('search-riwayat').value.toLowerCase();
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            const filtered = kwitansiData.filter(k => k.nama.toLowerCase().includes(query) || k.keterangan.toLowerCase().includes(query) || k.id.toLowerCase().includes(query));
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500 bg-white"><i class="fas fa-folder-open text-3xl text-gray-300 mb-3 block"></i>Tidak ada data transaksi ditemukan.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(k => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-emerald-50/50 transition bg-white";
+                tr.innerHTML = `
+                    <td class="p-5 border-b border-gray-50">
+                        <div class="font-bold text-emerald-700">${k.id}</div>
+                        <div class="text-xs text-gray-500 flex items-center gap-1 mt-1"><i class="far fa-calendar-alt"></i> ${formatDateID(k.tanggal)}</div>
+                    </td>
+                    <td class="p-5 border-b border-gray-50 font-semibold text-gray-800">${k.nama}</td>
+                    <td class="p-5 border-b border-gray-50 font-bold text-gray-900">${formatRupiah(k.nominal)}</td>
+                    <td class="p-5 border-b border-gray-50 text-sm text-gray-600">
+                        <div class="line-clamp-2" title="${k.keterangan}">${k.keterangan}</div>
+                    </td>
+                    <td class="p-5 border-b border-gray-50 text-center">
+                        <button onclick='reDownloadPDF(${JSON.stringify(k).replace(/'/g, "&#39;")})' class="px-4 py-2 bg-white border border-gray-200 hover:border-emerald-500 hover:text-emerald-600 text-gray-700 rounded-lg shadow-sm transition text-sm font-medium inline-flex items-center gap-2">
+                            <i class="fas fa-download"></i> PDF
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function reDownloadPDF(data) {
+            showLoading("Mengunduh Ulang PDF...");
+            try {
+                await buildAndDownloadPDF(data);
+                showToast("PDF berhasil diunduh.");
+            } catch(e) {
+                showToast("Terjadi kesalahan saat mengunduh PDF.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- STREAMING_CHUNK:HTML2CANVAS & JSPDF ENGINE... ---
+        async function buildAndDownloadPDF(data) {
+            // 1. Populate Hidden HTML Template
+            document.getElementById('p-kop-nama').innerText = appSettings.nama;
+            document.getElementById('p-kop-alamat').innerText = appSettings.alamat;
+            document.getElementById('p-nomor').innerText = data.id;
+            document.getElementById('p-terima').innerText = data.nama;
+            
+            // Set Nominal Angka (Baru ditambahkan sesuai request)
+            document.getElementById('p-nominal-angka').innerText = formatRupiah(data.nominal);
+            
+            document.getElementById('p-terbilang').innerText = terbilang(data.nominal) + " Rupiah";
+            document.getElementById('p-keterangan').innerText = data.keterangan;
+            document.getElementById('p-nominal').innerText = formatRupiah(data.nominal);
+            document.getElementById('p-tempat').innerText = appSettings.tempat;
+            document.getElementById('p-tanggal').innerText = formatDateID(data.tanggal);
+            document.getElementById('p-bendahara').innerText = appSettings.bendahara;
+            document.getElementById('p-watermark').innerText = appSettings.nama; // Set nama institusi sebagai watermark
+
+            // Handle Images (Stempel & TTD)
+            const stempel = document.getElementById('p-stempel');
+            const ttd = document.getElementById('p-ttd');
+            
+            if(appSettings.stempelDataUrl) {
+                stempel.src = appSettings.stempelDataUrl;
+                stempel.style.display = 'block';
+            } else { stempel.style.display = 'none'; }
+            
+            if(appSettings.ttdDataUrl) {
+                ttd.src = appSettings.ttdDataUrl;
+                ttd.style.display = 'block';
+            } else { ttd.style.display = 'none'; }
+
+            // 2. Render to Canvas via html2canvas
+            const printArea = document.getElementById('kwitansi-print-area');
+            const canvas = await html2canvas(printArea, { 
+                scale: 2.5, // Kualitas tinggi
+                useCORS: true, 
+                backgroundColor: '#ffffff',
+                logging: false
+            });
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+            // 3. Put Canvas into jsPDF
+            const { jsPDF } = window.jspdf;
+            
+            // Ukuran PDF custom yang proporsional dengan template (800x480 ratio) -> ~210x126 mm
+            const pdf = new jsPDF('l', 'mm', [210, 130]);
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            // Menempatkan gambar tepat di tengah vertikal jika ada sisa ruang (meski harusnya pas)
+            const yPos = (pdf.internal.pageSize.getHeight() - pdfHeight) / 2;
+            
+            pdf.addImage(imgData, 'JPEG', 0, Math.max(0, yPos), pdfWidth, pdfHeight);
+            
+            // 4. Download
+            const filename = `Kwitansi_${data.id.replace(/\//g, '_')}.pdf`;
+            pdf.save(filename);
+        }
+    </script>
+</body>
+</html>
