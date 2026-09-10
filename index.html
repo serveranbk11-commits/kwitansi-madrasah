@@ -702,6 +702,95 @@
             }
         };
 
+        function formatDateID(dateStr) {
+            if (!dateStr) return "-";
+            const date = new Date(dateStr);
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        function terbilang(angka) {
+            var bilangan = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+            if (angka < 12) return bilangan[angka];
+            else if (angka < 20) return terbilang(angka - 10) + " Belas";
+            else if (angka < 100) return terbilang(Math.floor(angka / 10)) + " Puluh " + terbilang(angka % 10);
+            else if (angka < 200) return "Seratus " + terbilang(angka - 100);
+            else if (angka < 1000) return terbilang(Math.floor(angka / 100)) + " Ratus " + terbilang(angka % 100);
+            else if (angka < 2000) return "Seribu " + terbilang(angka - 1000);
+            else if (angka < 1000000) return terbilang(Math.floor(angka / 1000)) + " Ribu " + terbilang(angka % 1000);
+            else if (angka < 1000000000) return terbilang(Math.floor(angka / 1000000)) + " Juta " + terbilang(angka % 1000000);
+            return "";
+        }
+
+        function updateDashboard() {
+            document.getElementById('dash-nama').innerText = appSettings.nama || '-';
+            document.getElementById('dash-bendahara').innerText = appSettings.bendahara || '-';
+            document.getElementById('dash-alamat').innerText = appSettings.alamat || '-';
+            document.getElementById('dash-tempat').innerText = appSettings.tempat || '-';
+            
+            document.getElementById('stat-count').innerText = kwitansiData.length;
+            const total = kwitansiData.reduce((sum, item) => sum + (parseInt(item.nominal) || 0), 0);
+            document.getElementById('stat-total').innerText = formatRupiah(total);
+        }
+
+        function populateSettingsForm() {
+            document.getElementById('s-nama').value = appSettings.nama || '';
+            document.getElementById('s-alamat').value = appSettings.alamat || '';
+            document.getElementById('s-tempat').value = appSettings.tempat || '';
+            document.getElementById('s-bendahara').value = appSettings.bendahara || '';
+            
+            if (appSettings.stempelDataUrl && appSettings.stempelDataUrl.startsWith('data:image')) {
+                const img = document.getElementById('preview-stempel');
+                img.src = appSettings.stempelDataUrl;
+                img.classList.remove('hidden');
+                document.getElementById('text-stempel').classList.add('hidden');
+            }
+            if (appSettings.ttdDataUrl && appSettings.ttdDataUrl.startsWith('data:image')) {
+                const img = document.getElementById('preview-ttd');
+                img.src = appSettings.ttdDataUrl;
+                img.classList.remove('hidden');
+                document.getElementById('text-ttd').classList.add('hidden');
+            }
+        }
+
+        function previewImage(input, imgId) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Kompresi: Maksimal 300px agar base64 tidak melebihi limit 50.000 karakter Google Sheet
+                        const MAX_WIDTH = 300;
+                        const MAX_HEIGHT = 300;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        } else {
+                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        }
+                        
+                        canvas.width = width; canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Paksa PNG agar transparan terjaga, kualitas diturunkan jika perlu
+                        const dataUrl = canvas.toDataURL('image/png'); 
+                        const previewEl = document.getElementById(imgId);
+                        previewEl.src = dataUrl;
+                        previewEl.classList.remove('hidden');
+                        document.getElementById('text-' + imgId.split('-')[1]).classList.add('hidden');
+                    }
+                    img.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
         // --- STREAMING_CHUNK:UI UTILITIES (Toast, Modal, Loading)... ---
         function showLoading(text = "Memproses...") {
             document.getElementById('loading-text').innerText = text;
@@ -797,6 +886,7 @@
             try {
                 const response = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'login', username: user, password: pass })
                 });
                 const result = await response.json();
@@ -825,6 +915,7 @@
                 try {
                      await fetch(APP_SCRIPT_URL, {
                         method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ action: 'logout', token: sessionToken })
                     });
                 } catch(e) {
@@ -958,6 +1049,7 @@
             try {
                 const response = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ 
                         action: 'save_settings', 
                         token: sessionToken,
@@ -969,7 +1061,6 @@
                 
                 if (result.success) {
                     appSettings = newSettings;
-                    // If backend saved to Drive and returned actual URLs (simplified here, we keep using dataURL for fast UI rendering, but in a real massive app we might fetch the drive URL. For kwitansi PDF, dataURL is actually better/faster).
                     updateDashboard();
                     showToast("Pengaturan berhasil disimpan.", "success");
                 } else {
@@ -1024,6 +1115,7 @@
                 // 1. Save to Backend First
                 const response = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ 
                         action: 'save_kwitansi', 
                         token: sessionToken,
