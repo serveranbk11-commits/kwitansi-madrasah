@@ -31,8 +31,8 @@
         }
         
         .kwitansi-modern {
-            width: 100%;
-            min-height: 650px;
+            width: 900px;
+            min-height: 600px;
             background-color: #ffffff;
             border: 3px solid #065f46;
             position: relative;
@@ -40,6 +40,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            padding-bottom: 10px;
         }
         
         .k-watermark {
@@ -59,7 +60,7 @@
         .k-header {
             background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
             color: white;
-            padding: 25px 35px;
+            padding: 22px 35px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -67,7 +68,7 @@
             z-index: 1;
         }
         .k-header-left h1 {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
             margin: 0;
             letter-spacing: 1px;
@@ -89,14 +90,14 @@
             backdrop-filter: blur(4px);
         }
         .k-header-right h2 {
-            font-size: 15px;
-            margin: 0 0 5px 0;
+            font-size: 14px;
+            margin: 0 0 4px 0;
             color: #a7f3d0;
             font-weight: 600;
             text-transform: uppercase;
         }
         .k-header-right p {
-            font-size: 17px;
+            font-size: 16px;
             margin: 0;
             font-weight: 700;
             color: #ffffff;
@@ -104,13 +105,13 @@
         }
 
         .k-body {
-            padding: 25px 35px;
+            padding: 20px 35px;
             flex-grow: 1;
             z-index: 1;
         }
         .k-row {
             display: flex;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             align-items: flex-start;
         }
         .k-label {
@@ -118,29 +119,29 @@
             font-size: 15px;
             font-weight: 600;
             color: #374151;
-            padding-top: 5px;
+            padding-top: 4px;
         }
         .k-colon {
             width: 20px;
             font-weight: 600;
             color: #374151;
-            padding-top: 5px;
+            padding-top: 4px;
         }
         .k-value {
             flex-grow: 1;
             font-size: 16px;
             font-weight: 500;
             color: #111827;
-            padding-bottom: 5px;
+            padding-bottom: 4px;
             border-bottom: 2px dotted #9ca3af;
-            min-height: 30px;
-            line-height: 1.6;
+            min-height: 26px;
+            line-height: 1.5;
         }
         
         .k-terbilang-box {
             background-color: #ecfdf5;
             border-left: 4px solid #059669;
-            padding: 10px 15px;
+            padding: 8px 14px;
             font-size: 15px;
             font-style: italic;
             font-weight: 700;
@@ -150,7 +151,7 @@
         }
 
         .k-footer {
-            padding: 15px 35px 30px 35px;
+            padding: 10px 35px 20px 35px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
@@ -160,49 +161,50 @@
         .k-nominal-container {
             background: #047857;
             color: white;
-            padding: 12px 25px;
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             border: 2px solid #065f46;
+            margin-bottom: 5px;
         }
         .k-nominal-label {
             font-size: 11px;
             text-transform: uppercase;
             color: #a7f3d0;
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .k-nominal-value {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 800;
             letter-spacing: 1px;
         }
         
         .k-signature-area {
             text-align: center;
-            min-width: 280px;
+            width: 300px;
             position: relative;
         }
         .k-date {
-            font-size: 14px;
+            font-size: 13px;
             color: #374151;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             font-weight: 600;
         }
         .k-sig-box {
             position: relative;
-            height: 100px;
-            margin-bottom: 5px;
+            height: 95px;
+            margin-bottom: 4px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
         .k-stempel {
             position: absolute;
-            left: -40px;
-            top: -25px;
-            width: 120px;
-            height: 120px;
+            left: 20px;
+            top: -15px;
+            width: 105px;
+            height: 105px;
             opacity: 0.85;
             object-fit: contain;
             mix-blend-mode: multiply;
@@ -211,17 +213,17 @@
         }
         .k-ttd {
             position: absolute;
-            left: 30px;
-            top: -20px;
-            width: 140px;
-            height: 85px;
+            left: 80px;
+            top: 5px;
+            width: 120px;
+            height: 75px;
             object-fit: contain;
             mix-blend-mode: multiply;
             z-index: 2;
             pointer-events: none;
         }
         .k-bendahara-name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             color: #111827;
             text-decoration: underline;
@@ -230,7 +232,7 @@
             z-index: 3;
         }
         .k-bendahara-title {
-            font-size: 13px;
+            font-size: 12px;
             color: #4b5563;
             font-weight: 500;
             position: relative;
@@ -305,7 +307,7 @@
                     <span>Masuk Sistem</span> <i class="fas fa-arrow-right-to-bracket"></i>
                 </button>
                 <div class="mt-6 text-center">
-                    <p class="text-xs text-gray-500 bg-emerald-50 py-2.5 px-3 rounded-lg border border-emerald-100 font-medium">Hint Demo: <span class="font-bold text-emerald-700">admin</span> / <span class="font-bold text-emerald-700">admin123</span></p>
+                    <p class="text-xs text-gray-500 bg-emerald-50 py-2.5 px-3 rounded-lg border border-emerald-100 font-medium">: <span class="font-bold text-emerald-700"></span> / <span class="font-bold text-emerald-700"></span></p>
                 </div>
             </form>
         </div>
@@ -547,9 +549,10 @@
                                             <img id="preview-stempel" class="max-h-full max-w-full hidden relative z-10 p-2 mix-blend-multiply">
                                             <span id="text-stempel" class="text-xs text-gray-400 absolute text-center">Upload<br>Stempel</span>
                                         </div>
-                                        <div class="flex-1">
+                                        <div class="flex-1 flex flex-col gap-2">
                                             <input type="file" id="file-stempel" accept="image/png, image/jpeg" class="hidden" onchange="previewImage(this, 'preview-stempel')">
                                             <button type="button" onclick="document.getElementById('file-stempel').click()" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">Pilih Gambar</button>
+                                            <button type="button" id="btn-delete-stempel" onclick="deleteAsset('stempel')" class="px-3 py-1.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition hidden"><i class="fas fa-trash-can mr-1"></i> Hapus Stempel</button>
                                         </div>
                                     </div>
                                 </div>
@@ -561,9 +564,10 @@
                                             <img id="preview-ttd" class="max-h-full max-w-full hidden relative z-10 p-2 mix-blend-multiply">
                                             <span id="text-ttd" class="text-xs text-gray-400 absolute text-center">Upload<br>TTD</span>
                                         </div>
-                                        <div class="flex-1">
+                                        <div class="flex-1 flex flex-col gap-2">
                                             <input type="file" id="file-ttd" accept="image/png, image/jpeg" class="hidden" onchange="previewImage(this, 'preview-ttd')">
                                             <button type="button" onclick="document.getElementById('file-ttd').click()" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">Pilih Gambar</button>
+                                            <button type="button" id="btn-delete-ttd" onclick="deleteAsset('ttd')" class="px-3 py-1.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition hidden"><i class="fas fa-trash-can mr-1"></i> Hapus TTD</button>
                                         </div>
                                     </div>
                                 </div>
@@ -610,7 +614,7 @@
                 <div class="k-row">
                     <div class="k-label">Untuk pembayaran</div>
                     <div class="k-colon">:</div>
-                    <div class="k-value" id="p-keterangan" style="min-height: 50px;"></div>
+                    <div class="k-value" id="p-keterangan" style="min-height: 45px;"></div>
                 </div>
             </div>
             <div class="k-footer">
@@ -703,12 +707,23 @@
                 img.src = appSettings.stempelDataUrl;
                 img.classList.remove('hidden');
                 document.getElementById('text-stempel').classList.add('hidden');
+                document.getElementById('btn-delete-stempel').classList.remove('hidden');
+            } else {
+                document.getElementById('preview-stempel').classList.add('hidden');
+                document.getElementById('text-stempel').classList.remove('hidden');
+                document.getElementById('btn-delete-stempel').classList.add('hidden');
             }
+
             if (appSettings.ttdDataUrl && appSettings.ttdDataUrl.startsWith('data:image')) {
                 const img = document.getElementById('preview-ttd');
                 img.src = appSettings.ttdDataUrl;
                 img.classList.remove('hidden');
                 document.getElementById('text-ttd').classList.add('hidden');
+                document.getElementById('btn-delete-ttd').classList.remove('hidden');
+            } else {
+                document.getElementById('preview-ttd').classList.add('hidden');
+                document.getElementById('text-ttd').classList.remove('hidden');
+                document.getElementById('btn-delete-ttd').classList.add('hidden');
             }
         }
 
@@ -721,7 +736,7 @@
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-                        const MAX_SIZE = 300;
+                        const MAX_SIZE = 250;
                         let width = img.width;
                         let height = img.height;
 
@@ -738,13 +753,37 @@
                         const previewEl = document.getElementById(imgId);
                         previewEl.src = dataUrl;
                         previewEl.classList.remove('hidden');
-                        const textEl = document.getElementById('text-' + imgId.split('-')[1]);
-                        if(textEl) textEl.classList.add('hidden');
+                        
+                        const key = imgId.split('-')[1];
+                        document.getElementById('text-' + key).classList.add('hidden');
+                        document.getElementById('btn-delete-' + key).classList.remove('hidden');
                     }
                     img.src = event.target.result;
                 }
                 reader.readAsDataURL(file);
             }
+        }
+
+        function deleteAsset(type) {
+            showModal("Hapus Aset", `Apakah Anda yakin ingin menghapus ${type === 'stempel' ? 'Stempel' : 'Tanda Tangan'} ini?`, () => {
+                if(type === 'stempel') {
+                    appSettings.stempelDataUrl = "";
+                    document.getElementById('preview-stempel').src = "";
+                    document.getElementById('preview-stempel').classList.add('hidden');
+                    document.getElementById('text-stempel').classList.remove('hidden');
+                    document.getElementById('file-stempel').value = "";
+                    document.getElementById('btn-delete-stempel').classList.add('hidden');
+                } else {
+                    appSettings.ttdDataUrl = "";
+                    document.getElementById('preview-ttd').src = "";
+                    document.getElementById('preview-ttd').classList.add('hidden');
+                    document.getElementById('text-ttd').classList.remove('hidden');
+                    document.getElementById('file-ttd').value = "";
+                    document.getElementById('btn-delete-ttd').classList.add('hidden');
+                }
+                localStorage.setItem('kw_settings', JSON.stringify(appSettings));
+                showToast("Aset berhasil dihapus.", "success");
+            });
         }
 
         function showLoading(text = "Memproses...") {
@@ -1111,7 +1150,7 @@
             wrapper.style.top = '0px';
             wrapper.style.left = '0px';
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 600));
         }
 
         async function cleanupPrintTemplate() {
